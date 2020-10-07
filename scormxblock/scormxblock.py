@@ -116,7 +116,7 @@ def s3_upload(all_content, temp_directory, dest_dir):
         k = boto.s3.key.Key(bucket)
         k.key = destpath
         k.set_contents_from_filename(sourcepath)
-        # k.set_acl('public-read')  # Slows calls drastically
+        k.set_acl('public-read')  # Slows calls drastically
 
 
 def updoad_all_content(temp_directory, fs):
@@ -319,7 +319,7 @@ class ScormXBlock(XBlock):
 
         data = {}
 
-        for key, value in self.data_scorm.iteritems():
+        for key, value in self.data_scorm.items():
             if key in READ_MODEL_DATA:
                 data[key] = value
             elif key.startswith('cmi.interactions.') and validate_property(key, READ_MODEL_DATA):
@@ -337,7 +337,7 @@ class ScormXBlock(XBlock):
         """
         context = {'result': 'success'}
 
-        for name, value in data.iteritems():
+        for name, value in data.items():
             if name in ['cmi.core.lesson_status', 'cmi.completion_status']:
                 self.lesson_status = value
                 if self.has_score and value in ['completed', 'failed', 'passed']:
