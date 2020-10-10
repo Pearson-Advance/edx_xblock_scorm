@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
 import re
 import pkg_resources
 import zipfile
@@ -328,7 +327,7 @@ class ScormXBlock(XBlock):
                 data[key] = value
 
         values.update(data)
-        return Response(json.dumps(values), content_type='application/json')
+        return Response(values, content_type='application/json')
 
     @XBlock.json_handler
     def scorm_set_values(self, data, suffix=''):
