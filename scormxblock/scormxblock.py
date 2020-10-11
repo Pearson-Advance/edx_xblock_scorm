@@ -297,7 +297,7 @@ class ScormXBlock(XBlock):
 
         return Response({'result': 'success'}, content_type='application/json')
 
-    @XBlock.handler
+    @XBlock.json_handler
     def scorm_get_values(self, request=None, suffix=None):
         """
         This method allows a SCO to retrieve data from the LMS.
@@ -317,7 +317,8 @@ class ScormXBlock(XBlock):
         }
 
         data = {}
-
+        print('scorm debug 1')
+        print(values)
         for key, value in self.data_scorm.items():
             if key in READ_MODEL_DATA:
                 data[key] = value
@@ -325,9 +326,10 @@ class ScormXBlock(XBlock):
                 data[key] = value
             elif key.startswith('cmi.objectives.') and validate_property(key, READ_MODEL_DATA):
                 data[key] = value
-
+        print('scorm debug 2')
+        print(values)
         values.update(data)
-        return Response(values, content_type='application/json')
+        return values
 
     @XBlock.json_handler
     def scorm_set_values(self, data, suffix=''):
