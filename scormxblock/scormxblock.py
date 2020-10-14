@@ -111,11 +111,11 @@ def s3_upload(all_content, temp_directory, dest_dir):
     for filepath in all_content:
         sourcepath = path.normpath(path.join(temp_directory.root_path, filepath))
         destpath = path.normpath(path.join(dest_dir, filepath))
-
+        destpath = destpath.replace('.js', '.david')
         k = boto.s3.key.Key(bucket)
         k.key = destpath
         k.set_contents_from_filename(sourcepath)
-        k.set_acl('public-read')  # Slows calls drastically
+        # k.set_acl('public-read')  # Slows calls drastically
 
 
 def updoad_all_content(temp_directory, fs):
@@ -317,8 +317,6 @@ class ScormXBlock(XBlock):
         }
 
         data = {}
-        print('scorm debug 1')
-        print(values)
         for key, value in self.data_scorm.items():
             if key in READ_MODEL_DATA:
                 data[key] = value
@@ -326,8 +324,6 @@ class ScormXBlock(XBlock):
                 data[key] = value
             elif key.startswith('cmi.objectives.') and validate_property(key, READ_MODEL_DATA):
                 data[key] = value
-        print('scorm debug 2')
-        print(values)
         values.update(data)
         return values
 
