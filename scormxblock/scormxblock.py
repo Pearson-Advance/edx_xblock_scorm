@@ -6,7 +6,7 @@ import pkg_resources
 import zipfile
 import xml.etree.ElementTree as ET
 from urllib.parse import urljoin, urlparse, unquote
-import boto
+import boto3
 
 from os import path, walk
 
@@ -105,17 +105,22 @@ def s3_upload(all_content, temp_directory, dest_dir):
     Actual handling of the s3 uploads.
     It uses a direct boto connection for performance reasons
     """
-    conn = boto.connect_s3(settings.DJFS.get('aws_access_key_id'), settings.DJFS.get('aws_secret_access_key'))
-    bucket = conn.get_bucket(settings.DJFS.get('bucket'))
+    session = boto3.Session(
+        aws_access_key_id=settings.DJFS.get('aws_access_key_id'),
+        aws_secret_access_key=settings.DJFS.get('aws_secret_access_key'),
+        region_name='eu-west-1'
+    )
+    s3_client = session.resource('s3')
+    bucket = s3_client.Bucket(settings.DJFS.get('bucket'))
 
     for filepath in all_content:
         sourcepath = path.normpath(path.join(temp_directory.root_path, filepath))
         destpath = path.normpath(path.join(dest_dir, filepath))
-        destpath = destpath.replace('.js', '.david')
-        k = boto.s3.key.Key(bucket)
-        k.key = destpath
-        k.set_contents_from_filename(sourcepath)
-        # k.set_acl('public-read')  # Slows calls drastically
+        bucket.upload_file(
+            sourcepath,
+            destpath,
+            ExtraArgs={'ACL': 'public-read'},
+        )
 
 
 def updoad_all_content(temp_directory, fs):
