@@ -22,7 +22,7 @@ def package_data(pkg, roots):
 
 setup(
     name='scormxblock-xblock',
-    version='1.0.5.juntest',
+    version='1.0.7.juntest',
     description='scormxblock XBlock',   # TODO: write a better description.
     packages=[
         'scormxblock',

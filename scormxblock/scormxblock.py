@@ -21,6 +21,7 @@ from djpyfs import djpyfs
 from xblock.core import XBlock
 from xblock.fields import Scope, String, Float, Boolean, Dict
 from xblock.fragment import Fragment
+import mimetypes
 
 
 # Make '_' a no-op so we can scrape strings
@@ -108,7 +109,7 @@ def s3_upload(all_content, temp_directory, dest_dir):
     session = boto3.Session(
         aws_access_key_id=settings.DJFS.get('aws_access_key_id'),
         aws_secret_access_key=settings.DJFS.get('aws_secret_access_key'),
-        region_name='eu-west-1'
+        region_name=settings.DJFS.get('region_name')
     )
     s3_client = session.resource('s3')
     bucket = s3_client.Bucket(settings.DJFS.get('bucket'))
@@ -116,10 +117,15 @@ def s3_upload(all_content, temp_directory, dest_dir):
     for filepath in all_content:
         sourcepath = path.normpath(path.join(temp_directory.root_path, filepath))
         destpath = path.normpath(path.join(dest_dir, filepath))
+        content_type = mimetypes.guess_type(sourcepath)[0]
+        if content_type is None:
+            content_type = 'application/octet-stream'
+        if isinstance(content_type, bytes):
+            content_type = content_type.decode('utf-8')
         bucket.upload_file(
             sourcepath,
             destpath,
-            ExtraArgs={'ACL': 'public-read'},
+            ExtraArgs={'ACL': 'public-read', 'ContentType': content_type},
         )
 
 
