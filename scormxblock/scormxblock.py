@@ -294,7 +294,7 @@ class ScormXBlock(XBlock):
             zip_file.extractall(temp_directory.root_path)
 
             manifest_path = '{}/imsmanifest.xml'.format(temp_directory.root_path)
-            with open(manifest_path, 'r') as manifest_file:
+            with open(manifest_path, 'r' encoding='UTF-8') as manifest_file:
                 manifest = manifest_file.read()
             manifest_file.closed
             self.set_fields_xblock(manifest)
