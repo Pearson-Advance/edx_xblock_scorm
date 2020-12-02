@@ -16,6 +16,7 @@ from django.template import Context, Template
 from webob import Response
 
 from celery import task
+from fs.copy import copy_fs
 from fs.tempfs import TempFS
 from djpyfs import djpyfs
 
@@ -137,9 +138,6 @@ def updoad_all_content(temp_directory, fs):
     This standalone function handles the bulk upload of unzipped content.
     """
     if not settings.DJFS.get('type', 'osfs') == "s3fs":
-        # Temporary fix
-        # TODO: find a better solution for ImportError: No module named fs.utils
-        from fs.copy import copy_fs
         copy_fs(temp_directory, fs)
         return
 
