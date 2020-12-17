@@ -8,6 +8,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 from urllib.parse import urljoin, urlparse, unquote
 import boto3
+import json
 
 from os import path, walk
 
@@ -309,7 +310,7 @@ class ScormXBlock(XBlock):
 
         return Response({'result': 'success'}, content_type='application/json')
 
-    @XBlock.json_handler
+    @XBlock.handler
     def scorm_get_values(self, request=None, suffix=None):
         """
         This method allows a SCO to retrieve data from the LMS.
@@ -339,7 +340,7 @@ class ScormXBlock(XBlock):
                 data[key] = value
 
         values.update(data)
-        return values
+        return Response(text=json.dumps(values), content_type='application/json')
 
     @XBlock.json_handler
     def scorm_set_values(self, data, suffix=''):
