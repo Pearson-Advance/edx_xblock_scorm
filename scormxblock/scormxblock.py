@@ -16,7 +16,7 @@ from django.conf import settings
 from django.template import Context, Template
 from webob import Response
 
-from celery import task
+from celery import shared_task
 from fs.copy import copy_fs
 from fs.tempfs import TempFS
 from djpyfs import djpyfs
@@ -103,7 +103,7 @@ READ_MODEL_DATA = [
 ]
 
 
-@task(name='scormxblock.scormxblock.s3_upload', routing_key=settings.HIGH_PRIORITY_QUEUE)
+@shared_task(name='scormxblock.scormxblock.s3_upload', routing_key=settings.HIGH_PRIORITY_QUEUE)
 def s3_upload(all_content, temp_directory, dest_dir):
     """
     Actual handling of the s3 uploads.
@@ -138,7 +138,7 @@ def updoad_all_content(temp_directory, fs):
     """
     This standalone function handles the bulk upload of unzipped content.
     """
-    if not settings.DJFS.get('type', 'osfs') == "s3fs":
+    if settings.DJFS.get('type', 'osfs') != "s3fs":
         copy_fs(temp_directory, fs)
         return
 
@@ -152,7 +152,7 @@ def updoad_all_content(temp_directory, fs):
 
     if len(all_content) < FILES_THRESHOLD_FOR_ASYNC:
         # We estimate no problem here, just upload the files
-        s3_upload(all_content, temp_directory, dest_dir)
+        s3_upload.delay(all_content, temp_directory, dest_dir)
     else:
         # The raw number of files is going to make this request time out. Use celery instead
         s3_upload.delay(all_content, temp_directory, dest_dir)
@@ -171,23 +171,25 @@ def validate_property(key, valid_keys):
     """
     words_in_key = key.rsplit(".")
     len_words = len(words_in_key)
-
     if len_words == 3:
         return key in valid_keys
     elif len_words == 4:
-        new_key = "{}.{}.n.{}".format(words_in_key[0], words_in_key[1], words_in_key[3])
+        new_key = f'{words_in_key[0]}.{words_in_key[1]}.n.{words_in_key[3]}'
         return new_key in valid_keys
     elif len_words == 5:
-        new_key = "{}.{}.n.{}.{}".format(words_in_key[0], words_in_key[1], words_in_key[3], words_in_key[4])
+        new_key = f'{words_in_key[0]}.{words_in_key[1]}.n.{words_in_key[3]}.{words_in_key[4]}'
+
         return new_key in valid_keys
     elif len_words == 6:
-        new_key = "{}.{}.n.{}.n.{}".format(words_in_key[0], words_in_key[1], words_in_key[3], words_in_key[5])
+        new_key = f'{words_in_key[0]}.{words_in_key[1]}.n.{words_in_key[3]}.n.{words_in_key[5]}'
         return new_key in valid_keys
     return False
 
 
 class ScormXBlock(XBlock):
-
+    """
+    An XBlock providing open edx integration with SCORM.
+    """
     display_name = String(
         display_name=_("Display Name"),
         help=_("Display name for this module"),
@@ -281,6 +283,19 @@ class ScormXBlock(XBlock):
 
     @XBlock.handler
     def studio_submit(self, request, suffix=''):
+        """
+        Called when submitting the form in Studio.
+
+        The data is saved via the ScormXBlockMixin.save_fields method.
+        Uploads the content using the upload_all_content function.
+
+        Args:
+            request: Django request object.
+            suffix: The URL suffix used to reach this handler.
+
+        Returns:
+            A JSON response indicating success or failure.
+        """
 
         self.display_name = request.params['display_name']
         self.has_score = request.params['has_score']
@@ -308,7 +323,7 @@ class ScormXBlock(XBlock):
             # Destroy temp directory after all files are copied.
             temp_directory.close()
 
-        return Response({'result': 'success'}, content_type='application/json')
+        return Response({'result': 'success'}, content_type='application/json', charset='utf8')
 
     @XBlock.handler
     def scorm_get_values(self, request=None, suffix=None):
@@ -340,7 +355,7 @@ class ScormXBlock(XBlock):
                 data[key] = value
 
         values.update(data)
-        return Response(text=json.dumps(values), content_type='application/json')
+        return Response(text=json.dumps(values), content_type='application/json', charset='utf8')
 
     @XBlock.json_handler
     def scorm_set_values(self, data, suffix=''):
