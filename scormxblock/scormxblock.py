@@ -152,7 +152,7 @@ def updoad_all_content(temp_directory, fs):
 
     if len(all_content) < FILES_THRESHOLD_FOR_ASYNC:
         # We estimate no problem here, just upload the files
-        s3_upload.delay(all_content, temp_directory, dest_dir)
+        s3_upload(all_content, temp_directory, dest_dir)
     else:
         # The raw number of files is going to make this request time out. Use celery instead
         s3_upload.delay(all_content, temp_directory, dest_dir)
