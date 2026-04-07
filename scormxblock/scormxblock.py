@@ -3,7 +3,6 @@
 
 import mimetypes
 import re
-import pkg_resources
 import zipfile
 import xml.etree.ElementTree as ET
 from urllib.parse import urljoin, urlparse, unquote
@@ -24,6 +23,8 @@ from djpyfs import djpyfs
 from xblock.core import XBlock
 from xblock.fields import Scope, String, Float, Boolean, Dict
 from xblock.fragment import Fragment
+
+from importlib import resources as importlib_resources
 
 
 # Make '_' a no-op so we can scrape strings
@@ -248,7 +249,10 @@ class ScormXBlock(XBlock):
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
-        data = pkg_resources.resource_string(__name__, path)
+        try:
+            data = importlib_resources.files(__name__).joinpath(path).read_bytes()
+        except TypeError:
+            data = importlib_resources.files(__package__).joinpath(path).read_bytes()
         return data.decode("utf8")
 
     @XBlock.supports('multi_device') # Mark as mobile-friendly
